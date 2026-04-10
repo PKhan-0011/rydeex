@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ride booking app hai isme mughe like na ride bookk karna hai!..
+// and in ride booking app kuch entityies banani hai 
+
+// Users, Driver,  Payment,  and ride!..
+
+model User {
+  id Int @id @default(autoincrement())
+
+  username String
+  email    String @unique // @unique ye already indexing kar leta hai okkh!..
+  password String
+
+  role Role? @default(RIDER)
+
+  phone String? // mai isme Int nahi kar skta bcz agarInt karuga to 0 ka load aa jayega and aage error aa skta hai isiliye okkh!..
+
+  // realationship lagega isme!..
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+  rides     Ride[]
+}
+
+enum Role {
+  RIDER
+  DRIVER
+  ADMIN
+}
+
+model Driver {
+  id Int @id @default(autoincrement())
+
+  isAvailable CheckDriverAvailability @default(TRUE)
+
+  lat Float
+  lng Float
+
+  // relationship!..
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+  rides     Ride[]
+}
+
+enum CheckDriverAvailability {
+  TRUE
+  FALSE
+}
+
+model Ride {
+  id       Int @id @default(autoincrement())
+  userId   Int // f.k
+  driverId Int // f.k ek driver bhi multiple ride chla skta hai!..
+
+  pickUpLat Float
+  pickUpLng Float
+  dropLat   Float
+  dropLng   Float
+
+  status checkRide @default(SEARCHING)
+
+  // relation ship lagega yha p!..
+  // ek user multiple ride book kar skta hai okkh!..
+
+  user   User   @relation(references: [id], fields: [userId])
+  driver Driver @relation(references: [id], fields: [driverId])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt()
+  payments  Payment[]
+}
+
+enum checkRide {
+  SEARCHING
+  CANCELED
+  COMPLETE
+}
+
+model Payment {
+  id     Int @id @default(autoincrement())
+  rideId Int
+  //userId Int // one to many realtionship ayega yha par bhi like user and payment ke bich okkh!..
+  amount Int
+
+  //user User @relation(references: [id], fields: [userId])
+  // agar mai above wala karunga to mai data inconsistency daal rha hu bcz ye already ban chuka hai okkh!.. user -> ride ->paymnet 
+  // agar user ayega to data inconsistency aa jayegi that's why okkh!...
+  ride Ride @relation(fields: [rideId], references: [id])
+
+  status paymentStatus @default(PENDING)
+}
+
+enum paymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+// mai kuch bhi change karunga yha p to mai turant npx prisma migrate deb karunga okkh!..
+// dataBase dubara banega isliye okkh!..
